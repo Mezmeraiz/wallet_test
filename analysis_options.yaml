@@ -9,6 +9,11 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    - lib/ffi_impl/
+    - gen/
+
 linter:
   rules:
     depend_on_referenced_packages: false
