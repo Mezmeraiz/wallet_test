@@ -18,7 +18,6 @@ class BitcoinTransactionScreen extends StatefulWidget {
 class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
   LoadingStatus status = LoadingStatus.idle;
   late final WalletService _walletService;
-  String toAddress = '';
   String amount = '';
 
   final _wallets = {
@@ -66,9 +65,6 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
                     border: OutlineInputBorder(),
                     labelText: 'Enter address',
                   ),
-                  onChanged: (value) {
-                    toAddress = value;
-                  },
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -95,6 +91,7 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
       );
 
   void _sendBitcoinTransaction() async {
+    final toAddress = _addressController.text;
     if (toAddress.isEmpty || amount.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill in all fields')));
       return;
