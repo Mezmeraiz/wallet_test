@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:wallet_test/data/model/coin_type.dart';
 import 'package:wallet_test/di/dependency_scope.dart';
+import 'package:wallet_test/feature/bitcoin_transaction_screen.dart';
+import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 class CoinDetailScreen extends StatelessWidget {
   final TWCoinType coinType;
@@ -31,10 +32,24 @@ class CoinDetailScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 24),
                 textAlign: TextAlign.center,
               ),
+              if (coinType == TWCoinType.TWCoinTypeBitcoin) ...[
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => _openBitcoinScreen(context),
+                  child: const Text('Send'),
+                ),
+              ],
             ],
           ),
         ),
       ),
     );
   }
+
+  void _openBitcoinScreen(BuildContext context) => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BitcoinTransactionScreen(),
+        ),
+      );
 }

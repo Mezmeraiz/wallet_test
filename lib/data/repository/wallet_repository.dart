@@ -1,87 +1,99 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
+import 'package:wallet_test/common/extension.dart';
 import 'package:wallet_test/data/library_storage.dart';
-import 'package:wallet_test/data/model/coin_type.dart';
+import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 class WalletRepository {
-  final Pointer<T> Function<T extends NativeType>(String symbolName) _lookup;
+  final TrustWalletCore _core;
 
-  WalletRepository({required LibraryStorage libraryStorage}) : _lookup = libraryStorage.lookup;
+  WalletRepository({
+    required LibraryStorage libraryStorage,
+    required TrustWalletCore core,
+  }) : _core = core;
 
-  late final Pointer<Void> _wallet;
+  late final Pointer<TWHDWallet> _wallet;
 
   void walletCreate() {
-    final tWHDWalletCreate = _lookup<NativeFunction<Pointer<Void> Function(Int, Pointer<Utf8>)>>('TWHDWalletCreate')
-        .asFunction<Pointer<Void> Function(int, Pointer<Utf8>)>();
+    final Pointer<TWString1> passPointer = pointerFromString('');
 
-    var passPointer = pointerFromString('');
-
-    _wallet = tWHDWalletCreate(128, passPointer);
+    _wallet = _core.TWHDWalletCreate(128, passPointer);
 
     stringDelete(passPointer);
   }
 
-  void walletCreateWithMnemonic(String mnemonic, {String passphrase = ""}) {
-    if (!mnemonicIsValid(mnemonic)) throw Exception("mnemonic is invalid");
-    final tWHDWalletCreateWithMnemonic =
-        _lookup<NativeFunction<Pointer<Void> Function(Pointer<Utf8>, Pointer<Utf8>)>>('TWHDWalletCreateWithMnemonic')
-            .asFunction<Pointer<Void> Function(Pointer<Utf8>, Pointer<Utf8>)>();
+  void walletCreateWithMnemonic(String mnemonic, {String passphrase = ''}) {
+    if (!mnemonicIsValid(mnemonic)) throw Exception('mnemonic is invalid');
 
-    final mnemonicPointer = pointerFromString(mnemonic);
-    final passphrasePointer = pointerFromString(passphrase);
+    final Pointer<TWString1> mnemonicPointer = pointerFromString(mnemonic);
+    final Pointer<TWString1> passphrasePointer = pointerFromString(passphrase);
 
-    _wallet = tWHDWalletCreateWithMnemonic(mnemonicPointer, passphrasePointer);
+    _wallet = _core.TWHDWalletCreateWithMnemonic(mnemonicPointer, passphrasePointer);
 
     stringDelete(mnemonicPointer);
     stringDelete(passphrasePointer);
   }
 
-  Pointer<Utf8> pointerFromString(String string) {
-    final tWStringCreateWithUTF8Bytes =
-        _lookup<NativeFunction<Pointer<Utf8> Function(Pointer<Utf8>)>>('TWStringCreateWithUTF8Bytes')
-            .asFunction<Pointer<Utf8> Function(Pointer<Utf8>)>();
+  Pointer<TWString1> pointerFromString(String string) => _core.TWStringCreateWithUTF8Bytes(string.toNativeChar());
 
-    return tWStringCreateWithUTF8Bytes(string.toNativeUtf8());
-  }
+  int hashTypeForCoin(TWCoinType coin) => _core.TWBitcoinScriptHashTypeForCoin(coin);
 
-  String stringFromPointer(Pointer<Utf8> pointer) {
-    final tWStringUTF8Bytes = _lookup<NativeFunction<Pointer<Utf8> Function(Pointer<Utf8>)>>('TWStringUTF8Bytes')
-        .asFunction<Pointer<Utf8> Function(Pointer<Utf8>)>();
-
-    return tWStringUTF8Bytes(pointer).toDartString();
-  }
+  String stringFromPointer(Pointer<TWString1> pointer) => _core.TWStringUTF8Bytes(pointer).toDartString();
 
   String walletMnemonic() {
-    final tWHDWalletMnemonic = _lookup<NativeFunction<Pointer<Utf8> Function(Pointer<Void>)>>('TWHDWalletMnemonic')
-        .asFunction<Pointer<Utf8> Function(Pointer<Void>)>();
-
-    final Pointer<Utf8> mnemonicPointer = tWHDWalletMnemonic(_wallet);
+    final Pointer<TWString1> mnemonicPointer = _core.TWHDWalletMnemonic(_wallet);
 
     return stringFromPointer(mnemonicPointer);
   }
 
   String walletGetAddressForCoin(TWCoinType coinType) {
-    final tWHDWalletGetAddressForCoin =
-        _lookup<NativeFunction<Pointer<Utf8> Function(Pointer<Void>, Int32)>>('TWHDWalletGetAddressForCoin')
-            .asFunction<Pointer<Utf8> Function(Pointer<Void>, int)>();
-
-    final Pointer<Utf8> pointer = tWHDWalletGetAddressForCoin(_wallet, coinType.value);
+    final Pointer<TWString1> pointer = _core.TWHDWalletGetAddressForCoin(_wallet, coinType);
 
     return stringFromPointer(pointer);
   }
 
   bool mnemonicIsValid(String mnemonic) {
-    final tWMnemonicIsValid = _lookup<NativeFunction<Bool Function(Pointer<Utf8>)>>('TWMnemonicIsValid')
-        .asFunction<bool Function(Pointer<Utf8>)>();
+    final Pointer<TWString1> pointer = pointerFromString(mnemonic);
 
-    return tWMnemonicIsValid(pointerFromString(mnemonic));
+    return _core.TWMnemonicIsValid(pointer);
   }
 
-  void stringDelete(Pointer<Utf8> pointer) {
-    final tWStringDelete = _lookup<NativeFunction<Void Function(Pointer<Utf8>)>>('TWStringDelete')
-        .asFunction<void Function(Pointer<Utf8>)>();
+  void stringDelete(Pointer<TWString1> pointer) {
+    _core.TWStringDelete(pointer);
+  }
 
-    tWStringDelete(pointer);
+  Uint8List getKeyForCoin(TWCoinType coinType) {
+    final Pointer<TWPrivateKey> pointer = _core.TWHDWalletGetKeyForCoin(_wallet, coinType);
+    final Pointer<Void> data = _core.TWPrivateKeyData(pointer);
+
+    return _core.TWDataBytes(data).asTypedList(_core.TWDataSize(data));
+  }
+
+  Uint8List signerPlan(Uint8List bytes, TWCoinType coin) {
+    final Pointer<TWData> data = _core.TWDataCreateWithBytes(bytes.toPointerUint8(), bytes.length);
+    final Pointer<TWData1> signer = _core.TWAnySignerPlan(data, coin);
+    _core.TWDataDelete(data);
+
+    return _core.TWDataBytes(signer).asTypedList(_core.TWDataSize(signer));
+  }
+
+  Uint8List sign(Uint8List bytes, TWCoinType coin) {
+    final data = _core.TWDataCreateWithBytes(bytes.toPointerUint8(), bytes.length);
+    final signer = _core.TWAnySignerSign(data, coin);
+    _core.TWDataDelete(data);
+
+    return _core.TWDataBytes(signer).asTypedList(_core.TWDataSize(signer));
+  }
+
+  Uint8List lockScriptForAddress(String string, TWCoinType coin) {
+    final address = _core.TWStringCreateWithUTF8Bytes(string.toNativeUtf8().cast());
+
+    final script = _core.TWBitcoinScriptLockScriptForAddress(address, coin);
+    _core.TWStringDelete(address);
+    final data = _core.TWBitcoinScriptData(script);
+
+    return _core.TWDataBytes(script.cast()).asTypedList(_core.TWDataSize(data));
   }
 }

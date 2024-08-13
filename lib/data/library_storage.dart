@@ -1,13 +1,13 @@
 import 'dart:ffi';
 
 class LibraryStorage {
-  Pointer<T> Function<T extends NativeType>(String symbolName) get lookup => _lookup;
+  DynamicLibrary get library => _library;
 
-  late final Pointer<T> Function<T extends NativeType>(String symbolName) _lookup;
+  Pointer<T> Function<T extends NativeType>(String symbolName) get lookup => _library.lookup;
+
+  late final DynamicLibrary _library;
 
   void init() {
-    final dylib = DynamicLibrary.open('libTrustWalletCore.dylib');
-
-    _lookup = dylib.lookup;
+    _library = DynamicLibrary.open('libTrustWalletCore.dylib');
   }
 }
