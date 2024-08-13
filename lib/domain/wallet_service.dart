@@ -4,6 +4,7 @@ import 'package:convert/convert.dart';
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:http_interceptor/http/intercepted_http.dart';
 import 'package:wallet_test/common/utils.dart';
+import 'package:wallet_test/data/model/bitcoin_address_info.dart';
 import 'package:wallet_test/data/model/result.dart';
 import 'package:wallet_test/data/model/utxo.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
@@ -69,6 +70,25 @@ class WalletService {
     final rawTx = Utils.bytesToHex(signingOutput.encoded);
 
     return _sendRawTransaction(rawTx);
+  }
+
+  Future<String?> getBitcoinBalance() async {
+    final addressBtc = _walletRepository.walletGetAddressForCoin(TWCoinType.TWCoinTypeBitcoin);
+
+    String url = 'https://rpc.ankr.com/http/btc_blockbook/api/v2/address/$addressBtc';
+
+    final response = await _http.get(
+      Uri.parse(url),
+    );
+
+    final result = BitcoinAddressInfo.fromJson(jsonDecode(response.body));
+
+    final balance = result.balance;
+    if (balance == null) {
+      return null;
+    }
+
+    return Utils.satoshiToBtc(balance);
   }
 
   Future<List<Utxo>> _loadUtxos(String addressBtc, String amount) async {
