@@ -22,8 +22,10 @@ class WalletService {
 
   Future<String> sendBitcoinTransaction(
     String toAddress,
-    String amount,
+    String amountBtc,
   ) async {
+    final amount = Utils.btcToSatoshi(amountBtc);
+
     TWCoinType coin = TWCoinType.TWCoinTypeBitcoin;
 
     final addressBtc = _walletRepository.walletGetAddressForCoin(TWCoinType.TWCoinTypeBitcoin);

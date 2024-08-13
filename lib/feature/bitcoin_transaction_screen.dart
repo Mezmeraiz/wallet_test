@@ -73,6 +73,11 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
       );
 
   void _sendBitcoinTransaction() async {
+    if (toAddress.isEmpty || amount.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill in all fields')));
+      return;
+    }
+
     setState(() {
       status = LoadingStatus.loading;
     });

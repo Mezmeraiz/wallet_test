@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:wallet_test/common/utils.dart';
 import 'package:wallet_test/di/dependency_scope.dart';
 import 'package:wallet_test/feature/bitcoin_transaction_screen.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
@@ -14,7 +15,7 @@ class CoinDetailScreen extends StatelessWidget {
     final address = DependencyScope.of(context).walletRepository.walletGetAddressForCoin(coinType);
     return Scaffold(
       appBar: AppBar(
-        title: Text(coinType.name),
+        title: Text(Utils.getCoinName(coinType)),
       ),
       body: Center(
         child: Padding(

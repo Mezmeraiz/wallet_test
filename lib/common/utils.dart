@@ -20,6 +20,8 @@ class Utils {
 
   static String bytesToHex(List<int> bytes) => hex.encode(Uint8List.fromList(bytes));
 
+  static String btcToSatoshi(String btc) => (double.parse(btc) * 100000000).round().toString();
+
   static String getCoinName(TWCoinType coinType) => switch (coinType) {
         TWCoinType.TWCoinTypeAeternity => 'Aeternity',
         TWCoinType.TWCoinTypeAion => 'Aion',
