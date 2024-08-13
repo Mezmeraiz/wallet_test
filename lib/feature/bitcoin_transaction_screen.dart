@@ -21,6 +21,13 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
   String toAddress = '';
   String amount = '';
 
+  final _wallets = {
+    'Макс': 'bc1q92e0ujhxml6wtd9gsn3aa7276f5qpxr6gtk9qh',
+    'Толя': 'bc1q8st5wrn60v25lr9jpa7t7h058y5x4w44ffqjhp',
+    'Олег': 'bc1qff4tp6dn3sgq0kfedyg509qedlc8j9d33prmtv',
+  };
+  final _addressController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +46,22 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
+                Wrap(
+                  spacing: 16,
+                  children: _wallets.entries
+                      .map(
+                        (e) => ActionChip(
+                          label: Text(e.key),
+                          onPressed: () {
+                            _addressController.text = e.value;
+                          },
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
                 TextField(
+                  controller: _addressController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     labelText: 'Enter address',
@@ -121,5 +143,12 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
         ),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+
+    super.dispose();
   }
 }
