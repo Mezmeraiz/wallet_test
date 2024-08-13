@@ -23,6 +23,23 @@ class CoinDetailScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (coinType == TWCoinType.TWCoinTypeBitcoin) ...[
+                FutureBuilder(
+                  future: DependencyScope.of(context).walletService.getBitcoinBalance(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    }
+
+                    final balance = snapshot.data ?? '?';
+                    return Text(
+                      'Balance: $balance BTC',
+                      style: const TextStyle(fontSize: 24),
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+              ],
               QrImageView(
                 data: address,
                 size: 200,

@@ -6,6 +6,8 @@ import 'package:convert/convert.dart';
 import 'package:ffi/ffi.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
+const _oneBtcInSatoshi = 100000000;
+
 class Utils {
   Utils._();
 
@@ -20,7 +22,9 @@ class Utils {
 
   static String bytesToHex(List<int> bytes) => hex.encode(Uint8List.fromList(bytes));
 
-  static String btcToSatoshi(String btc) => (double.parse(btc) * 100000000).round().toString();
+  static String btcToSatoshi(String btc) => (double.parse(btc) * _oneBtcInSatoshi).round().toString();
+
+  static String satoshiToBtc(String satoshi) => (double.parse(satoshi) / _oneBtcInSatoshi).toString();
 
   static String getCoinName(TWCoinType coinType) => switch (coinType) {
         TWCoinType.TWCoinTypeAeternity => 'Aeternity',
