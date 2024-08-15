@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wallet_test/common/utils.dart';
 import 'package:wallet_test/feature/coin_detail_screen.dart';
+import 'package:wallet_test/feature/highlighted_text.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 class CoinListScreen extends StatefulWidget {
@@ -54,8 +55,14 @@ class _CoinListScreenState extends State<CoinListScreen> {
                       itemBuilder: (context, index) {
                         final coinType = _coins[index];
                         return ListTile(
-                          title: Text(Utils.getCoinName(coinType)),
-                          subtitle: Text(Utils.getCoinTicker(coinType)),
+                          title: HighlightedText(
+                            Utils.getCoinName(coinType),
+                            subText: _searchController.text,
+                          ),
+                          subtitle: HighlightedText(
+                            Utils.getCoinTicker(coinType),
+                            subText: _searchController.text,
+                          ),
                           onTap: () {
                             Navigator.push(
                               context,
