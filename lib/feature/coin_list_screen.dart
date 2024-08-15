@@ -28,15 +28,19 @@ class _CoinListScreenState extends State<CoinListScreen> {
         ),
         body: Column(
           children: [
-            TextField(
-              controller: _searchController,
-              onEditingComplete: _onSearch,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                hintText: 'Search',
-                suffix: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: _onSearch,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _searchController,
+                onEditingComplete: _onSearch,
+                textAlignVertical: TextAlignVertical.center,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
+                  labelText: 'Search',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: _onSearch,
+                  ),
                 ),
               ),
             ),
@@ -51,6 +55,7 @@ class _CoinListScreenState extends State<CoinListScreen> {
                         final coinType = _coins[index];
                         return ListTile(
                           title: Text(Utils.getCoinName(coinType)),
+                          subtitle: Text(Utils.getCoinTicker(coinType)),
                           onTap: () {
                             Navigator.push(
                               context,
@@ -77,7 +82,8 @@ class _CoinListScreenState extends State<CoinListScreen> {
       print(query);
 
       for (final coin in TWCoinType.values) {
-        if (Utils.getCoinName(coin).toLowerCase().contains(query)) {
+        if (Utils.getCoinName(coin).toLowerCase().contains(query) ||
+            Utils.getCoinTicker(coin).toLowerCase().contains(query)) {
           _coins.add(coin);
         }
       }
