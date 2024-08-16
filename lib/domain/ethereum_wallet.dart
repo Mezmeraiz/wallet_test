@@ -29,7 +29,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
 
   @override
   Future<double> getBalance() async {
-    final addressEth = _walletRepository.walletGetAddressForCoin(TWCoinType.TWCoinTypeEthereum);
+    final addressEth = getAddress(TWCoinType.TWCoinTypeEthereum);
 
     final payload = {
       'jsonrpc': '2.0',
