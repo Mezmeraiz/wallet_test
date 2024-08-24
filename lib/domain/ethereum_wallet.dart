@@ -1,21 +1,17 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http_interceptor/http/intercepted_http.dart';
 import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
+import 'package:wallet_test/common/utils.dart';
 import 'package:wallet_test/data/model/result.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 import 'package:wallet_test/protobuf/Ethereum.pb.dart' as ethereum;
-import 'package:fixnum/fixnum.dart' as fixnum;
 
 // const String _url = 'https://rpc.ankr.com/eth';
 const String _url = 'https://rpc.ankr.com/eth_holesky';
-
-/// Minimum gas limit for a simple transaction
-const _gasLimit = 21000;
 
 final class EthereumWallet extends BaseBlockchainWallet {
   final InterceptedHttp _http;
@@ -91,9 +87,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
       if (nonceResponse.statusCode == 200) {
         final nonceResult = Result.fromJson(jsonDecode(nonceResponse.body)).result;
 
-        // Allows to overwrite your own pending transactions that use the same nonce.
-        final nonce = BigInt.parse(nonceResult.substring(2), radix: 16);
-        print(nonce);
+        final nonce = _bigIntToUint8List(BigInt.parse(nonceResult.substring(2), radix: 16));
 
         // Returns the current price per gas in wei.
         final gasPriceResponse = await _http.post(
@@ -111,8 +105,8 @@ final class EthereumWallet extends BaseBlockchainWallet {
 
         if (gasPriceResponse.statusCode == 200) {
           final gasPriceResult = Result.fromJson(jsonDecode(gasPriceResponse.body)).result;
-          final gasPrice = BigInt.parse(gasPriceResult.substring(2), radix: 16);
-
+          final gasPrice = _bigIntToUint8List(BigInt.parse(gasPriceResult));
+          final gasLimit = _intToUint8List(21000);
           final double amountDouble = double.parse(amount);
 
           // Минимальный gas limit для простой транзакции
@@ -121,51 +115,29 @@ final class EthereumWallet extends BaseBlockchainWallet {
 
           final transaction = ethereum.Transaction(
             transfer: ethereum.Transaction_Transfer(
-              amount: [amountInWei.toInt()],
+              //amount: [amountInWei.toInt()],
+              amount: _bigIntToUint8List(amountInWei),
             ),
           );
 
+          final chainId = _bigIntToUint8List(BigInt.parse('0x4268'));
+
           final signedTransaction = ethereum.SigningInput(
-            chainId: [
-              TWEthereumChainID.TWEthereumChainIDEthereum.value,
-            ],
-            gasPrice: [
-              gasPrice.toInt(),
-            ],
-            gasLimit: [_gasLimit],
+            chainId: chainId,
+            gasPrice: gasPrice,
+            gasLimit: gasLimit,
             toAddress: toAddress,
             transaction: transaction,
+            privateKey: privateKeyEth,
+            nonce: nonce,
           );
 
-          // // Создание и подписывание транзакции
-          // final transaction = EthereumTransaction(
-          //   nonce: nonce,
-          //   gasPrice: gasPrice,
-          //   gasLimit: BigInt.from(gasLimit),
-          //   to: toAddress,
-          //   value: amountInWei,
-          //   data: [],
-          // );
+          TWCoinType coin = TWCoinType.TWCoinTypeEthereum;
+          final sign = _walletRepository.sign(signedTransaction.writeToBuffer(), coin);
+          final signingOutput = ethereum.SigningOutput.fromBuffer(sign);
+          final rawTx = Utils.bytesToHex(signingOutput.encoded);
 
-          // // Подписывание транзакции приватным ключом
-          // final signedTransaction = Signer.signTransaction(transaction, ethPrivateKey, ChainId.mainnet);
-
-          // // Отправка подписанной транзакции через JSON-RPC
-          final sendTransactionResponse = await _http.post(
-            Uri.parse(_url),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'jsonrpc': '2.0',
-              'method': 'eth_sendRawTransaction',
-              'params': ['0x${signedTransaction.toString()}'],
-              'id': 1,
-            }),
-          );
-
-          final txHash = jsonDecode(sendTransactionResponse.body)["result"];
-          if (kDebugMode) {
-            print('Transaction hash: $txHash');
-          }
+          return _sendRawTransaction(rawTx);
         } else {
           throw Exception('Failed to send transaction ${gasPriceResponse.reasonPhrase}');
         }
@@ -175,19 +147,50 @@ final class EthereumWallet extends BaseBlockchainWallet {
     } catch (e) {
       rethrow;
     }
+  }
 
-    // logger.d("mnemonic: ${widget.wallet.mnemonic()}");
-    // logger.d("address: ${widget.wallet.getAddressForCoin(TWCoinType.TWCoinTypeEthereum)}");
-    // final publicKey = widget.wallet.getKeyForCoin(TWCoinType.TWCoinTypeEthereum).getPublicKeySecp256k1(false);
-    // AnyAddress anyAddress = AnyAddress.createWithPublicKey(publicKey, TWCoinType.TWCoinTypeEthereum);
-    // logger.d("address from any address: ${anyAddress.description()}");
-    // print(widget.wallet.mnemonic());
-    // String privateKeyhex = hex.encode(widget.wallet.getKeyForCoin(TWCoinType.TWCoinTypeEthereum).data());
-    // logger.d("privateKeyhex: $privateKeyhex");
-    // logger.d("seed = ${hex.encode(widget.wallet.seed())}");
-    // final keystore = StoredKey.importPrivateKey(widget.wallet.getKeyForCoin(TWCoinType.TWCoinTypeEthereum).data(), "name", "password", TWCoinType.TWCoinTypeEthereum);
-    // logger.d("keystore: ${keystore?.exportJson()}");
+  Uint8List _bigIntToUint8List(BigInt bigInt) {
+    int byteLength = (bigInt.bitLength + 7) >> 3;
+    final bytes = Uint8List(byteLength);
 
-    return '';
+    BigInt mask = BigInt.from(0xff);
+
+    for (int i = 0; i < byteLength; i++) {
+      // Приведение BigInt к int перед присвоением в массив Uint8List
+      bytes[byteLength - i - 1] = (bigInt & mask).toInt();
+      bigInt = bigInt >> 8;
+    }
+
+    return bytes;
+  }
+
+  Uint8List _intToUint8List(int value) {
+    // Определяем количество байт, необходимых для представления int
+    int byteLength = (value.bitLength + 7) >> 3;
+
+    // Создаем Uint8List с нужной длиной
+    final bytes = Uint8List(byteLength);
+
+    // Заполняем массив байтами из числа
+    for (int i = 0; i < byteLength; i++) {
+      bytes[byteLength - i - 1] = (value >> (8 * i)) & 0xff;
+    }
+
+    return bytes;
+  }
+
+  Future<String> _sendRawTransaction(String rawTx) async {
+    final response = await _http.post(
+      Uri.parse(_url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'jsonrpc': '2.0',
+        'method': 'eth_sendRawTransaction',
+        'params': ['0x$rawTx'],
+        'id': 1,
+      }),
+    );
+
+    return Result.fromJson(jsonDecode(response.body)).result;
   }
 }

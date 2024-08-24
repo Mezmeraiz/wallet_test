@@ -43,7 +43,7 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
           'Олег': 'bc1qff4tp6dn3sgq0kfedyg509qedlc8j9d33prmtv',
         },
       TWCoinType.TWCoinTypeEthereum => {
-          // 'Макс': 'bc1q92e0ujhxml6wtd9gsn3aa7276f5qpxr6gtk9qh',
+          'Макс': '0xF35080873f54519C0aC40D11435e0205a998fFaf',
           'Толя': '0xB76b77AeA6f5bBe1685E0F13020Dc6cE8c7C4C6F',
           'Олег': '0xE0b77680f7423f60023259e9A42a180BDEb49BC6',
         },
