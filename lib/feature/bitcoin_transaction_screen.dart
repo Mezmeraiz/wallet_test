@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wallet_test/di/dependency_scope.dart';
-import 'package:wallet_test/domain/wallet_service.dart';
+import 'package:wallet_test/common/factory/wallet_service_factory.dart';
+import 'package:wallet_test/common/services/wallet_service.dart';
+import 'package:wallet_test/domain/bitcoin_wallet.dart';
+import 'package:wallet_test/domain/ethereum_wallet.dart';
+import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 enum LoadingStatus {
   idle,
@@ -9,7 +12,12 @@ enum LoadingStatus {
 }
 
 class BitcoinTransactionScreen extends StatefulWidget {
-  const BitcoinTransactionScreen({super.key});
+  final TWCoinType coinType;
+
+  const BitcoinTransactionScreen({
+    super.key,
+    required this.coinType,
+  });
 
   @override
   State<BitcoinTransactionScreen> createState() => _BitcoinTransactionScreenState();
@@ -17,20 +25,36 @@ class BitcoinTransactionScreen extends StatefulWidget {
 
 class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
   LoadingStatus status = LoadingStatus.idle;
-  late final WalletService _walletService;
   String amount = '';
-
-  final _wallets = {
-    'Макс': 'bc1q92e0ujhxml6wtd9gsn3aa7276f5qpxr6gtk9qh',
-    'Толя': 'bc1q8st5wrn60v25lr9jpa7t7h058y5x4w44ffqjhp',
-    'Олег': 'bc1qff4tp6dn3sgq0kfedyg509qedlc8j9d33prmtv',
-  };
+  late final WalletService _walletService;
+  late final Map<String, String> _wallets;
   final _addressController = TextEditingController();
+
+  TWCoinType get _coinType => widget.coinType;
 
   @override
   void initState() {
     super.initState();
-    _walletService = DependencyScope.of(context).walletService;
+
+    _wallets = switch (_coinType) {
+      TWCoinType.TWCoinTypeBitcoin => {
+          'Макс': 'bc1q92e0ujhxml6wtd9gsn3aa7276f5qpxr6gtk9qh',
+          'Толя': 'bc1q8st5wrn60v25lr9jpa7t7h058y5x4w44ffqjhp',
+          'Олег': 'bc1qff4tp6dn3sgq0kfedyg509qedlc8j9d33prmtv',
+        },
+      TWCoinType.TWCoinTypeEthereum => {
+          'Макс': '0xF35080873f54519C0aC40D11435e0205a998fFaf',
+          'Толя': '0xB76b77AeA6f5bBe1685E0F13020Dc6cE8c7C4C6F',
+          'Олег': '0xE0b77680f7423f60023259e9A42a180BDEb49BC6',
+        },
+      _ => throw UnimplementedError(),
+    };
+
+    _walletService = switch (_coinType) {
+      TWCoinType.TWCoinTypeBitcoin => WalletServiceFactory.getService<BitcoinWallet>(context),
+      TWCoinType.TWCoinTypeEthereum => WalletServiceFactory.getService<EthereumWallet>(context),
+      _ => throw UnimplementedError(),
+    };
   }
 
   @override
@@ -104,7 +128,10 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
     late final String result;
 
     try {
-      result = await _walletService.sendBitcoinTransaction(toAddress, amount);
+      result = await _walletService.sendTransaction(
+        toAddress: toAddress,
+        amount: amount,
+      );
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
       return;

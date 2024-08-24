@@ -3,77 +3,28 @@ import 'dart:convert';
 import 'package:convert/convert.dart';
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:http_interceptor/http/intercepted_http.dart';
+import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
 import 'package:wallet_test/common/utils.dart';
 import 'package:wallet_test/data/model/bitcoin_address_info.dart';
 import 'package:wallet_test/data/model/result.dart';
 import 'package:wallet_test/data/model/utxo.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
-import 'package:wallet_test/protobuf/Bitcoin.pb.dart' as Bitcoin;
+import 'package:wallet_test/protobuf/Bitcoin.pb.dart' as bitcoin;
 
-class WalletService {
-  final WalletRepository _walletRepository;
+final class BitcoinWallet extends BaseBlockchainWallet {
   final InterceptedHttp _http;
+  final WalletRepository _walletRepository;
 
-  WalletService({
-    required WalletRepository walletRepository,
+  const BitcoinWallet({
     required InterceptedHttp http,
+    required super.walletRepository,
   })  : _http = http,
         _walletRepository = walletRepository;
 
-  Future<String> sendBitcoinTransaction(
-    String toAddress,
-    String amountBtc,
-  ) async {
-    final amount = Utils.btcToSatoshi(amountBtc);
-
-    TWCoinType coin = TWCoinType.TWCoinTypeBitcoin;
-
-    final addressBtc = _walletRepository.walletGetAddressForCoin(TWCoinType.TWCoinTypeBitcoin);
-    final changeAddress = addressBtc;
-    final secretPrivateKeyBtc = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeBitcoin).toList();
-
-    List<Utxo> selectedUtxos = await _loadUtxos(addressBtc, amount);
-
-    final Iterable<Bitcoin.UnspentTransaction> unspentTransactions = selectedUtxos
-        .map((utxo) => Bitcoin.UnspentTransaction(
-              amount: $fixnum.Int64(int.parse(utxo.value)),
-              outPoint: Bitcoin.OutPoint(
-                hash: hex.decode(utxo.txid).reversed.toList(),
-                index: utxo.vout,
-                sequence: 0xffffffff,
-              ),
-              script: _walletRepository.lockScriptForAddress(addressBtc, coin),
-            ))
-        .toList();
-
-    final signingInput = Bitcoin.SigningInput(
-      amount: $fixnum.Int64.parseInt(amount),
-      hashType: _walletRepository.hashTypeForCoin(coin),
-      toAddress: toAddress,
-      changeAddress: changeAddress,
-      byteFee: $fixnum.Int64.parseInt('10'),
-      coinType: coin.value,
-      utxo: unspentTransactions,
-      privateKey: [
-        secretPrivateKeyBtc,
-      ],
-    );
-
-    final transactionPlan = Bitcoin.TransactionPlan.fromBuffer(
-      _walletRepository.signerPlan(signingInput.writeToBuffer(), coin).toList(),
-    );
-    signingInput.plan = transactionPlan;
-    signingInput.amount = transactionPlan.amount;
-    final sign = _walletRepository.sign(signingInput.writeToBuffer(), coin);
-    final signingOutput = Bitcoin.SigningOutput.fromBuffer(sign);
-    final rawTx = Utils.bytesToHex(signingOutput.encoded);
-
-    return _sendRawTransaction(rawTx);
-  }
-
-  Future<String?> getBitcoinBalance() async {
-    final addressBtc = _walletRepository.walletGetAddressForCoin(TWCoinType.TWCoinTypeBitcoin);
+  @override
+  Future<double> getBalance() async {
+    final addressBtc = getAddress(TWCoinType.TWCoinTypeBitcoin);
 
     String url = 'https://rpc.ankr.com/http/btc_blockbook/api/v2/address/$addressBtc';
 
@@ -85,10 +36,64 @@ class WalletService {
 
     final balance = result.balance;
     if (balance == null) {
-      return null;
+      return 0.0;
     }
 
-    return Utils.satoshiToBtc(balance);
+    final String balanceString = Utils.satoshiToBtc(balance);
+
+    return double.tryParse(balanceString) ?? 0.0;
+  }
+
+  @override
+  Future<String> sendTransaction({
+    required String toAddress,
+    required String amount,
+  }) async {
+    final amountBtc = Utils.btcToSatoshi(amount);
+
+    TWCoinType coin = TWCoinType.TWCoinTypeBitcoin;
+
+    final addressBtc = getAddress(TWCoinType.TWCoinTypeBitcoin);
+    final changeAddress = addressBtc;
+    final secretPrivateKeyBtc = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeBitcoin).toList();
+
+    List<Utxo> selectedUtxos = await _loadUtxos(addressBtc, amountBtc);
+
+    final Iterable<bitcoin.UnspentTransaction> unspentTransactions = selectedUtxos
+        .map((utxo) => bitcoin.UnspentTransaction(
+              amount: $fixnum.Int64(int.parse(utxo.value)),
+              outPoint: bitcoin.OutPoint(
+                hash: hex.decode(utxo.txid).reversed.toList(),
+                index: utxo.vout,
+                sequence: 0xffffffff,
+              ),
+              script: _walletRepository.lockScriptForAddress(addressBtc, coin),
+            ))
+        .toList();
+
+    final signingInput = bitcoin.SigningInput(
+      amount: $fixnum.Int64.parseInt(amountBtc),
+      hashType: _walletRepository.hashTypeForCoin(coin),
+      toAddress: toAddress,
+      changeAddress: changeAddress,
+      byteFee: $fixnum.Int64.parseInt('10'),
+      coinType: coin.value,
+      utxo: unspentTransactions,
+      privateKey: [
+        secretPrivateKeyBtc,
+      ],
+    );
+
+    final transactionPlan = bitcoin.TransactionPlan.fromBuffer(
+      _walletRepository.signerPlan(signingInput.writeToBuffer(), coin).toList(),
+    );
+    signingInput.plan = transactionPlan;
+    signingInput.amount = transactionPlan.amount;
+    final sign = _walletRepository.sign(signingInput.writeToBuffer(), coin);
+    final signingOutput = bitcoin.SigningOutput.fromBuffer(sign);
+    final rawTx = Utils.bytesToHex(signingOutput.encoded);
+
+    return _sendRawTransaction(rawTx);
   }
 
   Future<List<Utxo>> _loadUtxos(String addressBtc, String amount) async {
