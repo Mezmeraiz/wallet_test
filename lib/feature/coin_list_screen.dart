@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:wallet_test/common/asset_json.dart';
 import 'package:wallet_test/common/utils.dart';
 import 'package:wallet_test/feature/coin_detail_screen.dart';
 import 'package:wallet_test/feature/highlighted_text.dart';
+import 'package:wallet_test/feature/token_detail_screen.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 class CoinListScreen extends StatefulWidget {
@@ -14,12 +19,23 @@ class CoinListScreen extends StatefulWidget {
 class _CoinListScreenState extends State<CoinListScreen> {
   final _searchController = TextEditingController();
   final _coins = <TWCoinType>[];
+  final _tokens = <MapEntry<String, String>>[];
 
   @override
   void initState() {
     super.initState();
 
-    _coins.addAll(TWCoinType.values);
+    _loadTokens();
+  }
+
+  void _loadTokens() async {
+    String jsonString = await rootBundle.loadString(AssetJson.tokens);
+    var tokensMap = json.decode(jsonString) as Map<String, dynamic>;
+
+    var usdtMap = Map<String, String>.from(tokensMap['USDT'] as Map);
+    //var g = tokensMap['USDT'];
+    _tokens.addAll(usdtMap.entries);
+    setState(() {});
   }
 
   @override
@@ -46,28 +62,28 @@ class _CoinListScreenState extends State<CoinListScreen> {
               ),
             ),
             Expanded(
-              child: _coins.isEmpty
+              child: _tokens.isEmpty
                   ? const Center(
                       child: Text('No results'),
                     )
                   : ListView.builder(
-                      itemCount: _coins.length,
+                      itemCount: _tokens.length,
                       itemBuilder: (context, index) {
-                        final coinType = _coins[index];
+                        final token = _tokens[index];
                         return ListTile(
                           title: HighlightedText(
-                            Utils.getCoinName(coinType),
+                            token.key,
                             subText: _searchController.text,
                           ),
                           subtitle: HighlightedText(
-                            Utils.getCoinTicker(coinType),
+                            token.value,
                             subText: _searchController.text,
                           ),
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CoinDetailScreen(coinType: coinType),
+                                builder: (context) => TokenDetailScreen(tokenInfo: token),
                               ),
                             );
                           },
@@ -75,6 +91,36 @@ class _CoinListScreenState extends State<CoinListScreen> {
                       },
                     ),
             ),
+            // Expanded(
+            //   child: _coins.isEmpty
+            //       ? const Center(
+            //           child: Text('No results'),
+            //         )
+            //       : ListView.builder(
+            //           itemCount: _coins.length,
+            //           itemBuilder: (context, index) {
+            //             final coinType = _coins[index];
+            //             return ListTile(
+            //               title: HighlightedText(
+            //                 Utils.getCoinName(coinType),
+            //                 subText: _searchController.text,
+            //               ),
+            //               subtitle: HighlightedText(
+            //                 Utils.getCoinTicker(coinType),
+            //                 subText: _searchController.text,
+            //               ),
+            //               onTap: () {
+            //                 Navigator.push(
+            //                   context,
+            //                   MaterialPageRoute(
+            //                     builder: (context) => CoinDetailScreen(coinType: coinType),
+            //                   ),
+            //                 );
+            //               },
+            //             );
+            //           },
+            //         ),
+            // ),
           ],
         ),
       );

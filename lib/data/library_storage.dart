@@ -8,6 +8,8 @@ class LibraryStorage {
   late final DynamicLibrary _library;
 
   void init() {
+    // var f = DynamicLibrary.open('WalletCore.framework/WalletCore');
+    // print(f.hashCode);
     _library = DynamicLibrary.open('libTrustWalletCore.dylib');
   }
 }

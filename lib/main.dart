@@ -4,6 +4,7 @@ import 'package:wallet_test/data/library_storage.dart';
 import 'package:wallet_test/data/logger_interceptor.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/di/dependency_scope.dart';
+import 'package:wallet_test/domain/token_service.dart';
 import 'package:wallet_test/feature/import_wallet_screen.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
@@ -21,10 +22,16 @@ void main() {
     core: core,
   );
 
+  final tokenService = TokenService(
+    http: http,
+    walletRepository: repository,
+  );
+
   runApp(
     DependencyScope(
       libraryStorage: libraryStorage,
       walletRepository: repository,
+      tokenService: tokenService,
       core: core,
       http: http,
       child: const MyApp(),

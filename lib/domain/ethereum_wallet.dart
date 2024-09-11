@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:convert/convert.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http_interceptor/http/intercepted_http.dart';
 import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
@@ -9,6 +10,7 @@ import 'package:wallet_test/data/model/result.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 import 'package:wallet_test/protobuf/Ethereum.pb.dart' as ethereum;
+import 'package:web3dart/crypto.dart';
 
 // const String _url = 'https://rpc.ankr.com/eth';
 const String _url = 'https://rpc.ankr.com/eth_holesky';

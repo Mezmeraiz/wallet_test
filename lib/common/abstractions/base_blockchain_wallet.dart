@@ -25,9 +25,6 @@ abstract base class BaseBlockchainWallet implements IBlockchainWallet {
   String getAddress(TWCoinType coinType) => _walletRepository.walletGetAddressForCoin(coinType);
 
   @override
-  Future<double> getBalance();
-
-  @override
   Future<String> sendTransaction({
     required String toAddress,
     required String amount,
