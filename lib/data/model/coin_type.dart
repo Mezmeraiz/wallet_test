@@ -1,0 +1,4 @@
+enum CoinType {
+  coin,
+  token,
+}

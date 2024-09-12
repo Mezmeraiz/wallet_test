@@ -1,16 +1,18 @@
 import 'package:meta/meta.dart';
+import 'package:wallet_test/data/model/coin.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 abstract interface class IBlockchainWallet {
-  String getAddress(TWCoinType coinType);
-
   Future<String> sendTransaction({
+    required Coin coin,
     required String toAddress,
     required String amount,
   });
 
-  Future<double> getBalance();
+  Future<double> getBalance({
+    required Coin coin,
+  });
 }
 
 abstract base class BaseBlockchainWallet implements IBlockchainWallet {
@@ -20,13 +22,5 @@ abstract base class BaseBlockchainWallet implements IBlockchainWallet {
     required WalletRepository walletRepository,
   }) : _walletRepository = walletRepository;
 
-  @override
-  @nonVirtual
   String getAddress(TWCoinType coinType) => _walletRepository.walletGetAddressForCoin(coinType);
-
-  @override
-  Future<String> sendTransaction({
-    required String toAddress,
-    required String amount,
-  });
 }

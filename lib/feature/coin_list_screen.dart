@@ -1,12 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:wallet_test/common/asset_json.dart';
-import 'package:wallet_test/common/utils.dart';
+import 'package:wallet_test/common/utils/coin_utils.dart';
+import 'package:wallet_test/common/utils/utils.dart';
+import 'package:wallet_test/data/model/coin.dart';
 import 'package:wallet_test/feature/coin_detail_screen.dart';
 import 'package:wallet_test/feature/highlighted_text.dart';
-import 'package:wallet_test/feature/token_detail_screen.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 class CoinListScreen extends StatefulWidget {
@@ -19,7 +16,8 @@ class CoinListScreen extends StatefulWidget {
 class _CoinListScreenState extends State<CoinListScreen> {
   final _searchController = TextEditingController();
   final _coins = <TWCoinType>[];
-  final _tokens = <MapEntry<String, String>>[];
+  late final List<Coin> coins;
+  //final _tokens = <MapEntry<String, String>>[];
 
   @override
   void initState() {
@@ -29,13 +27,14 @@ class _CoinListScreenState extends State<CoinListScreen> {
   }
 
   void _loadTokens() async {
-    String jsonString = await rootBundle.loadString(AssetJson.tokens);
-    var tokensMap = json.decode(jsonString) as Map<String, dynamic>;
+    // String jsonString = await rootBundle.loadString(AssetJson.tokens);
+    // var tokensMap = json.decode(jsonString) as Map<String, dynamic>;
+    //
+    // var usdtMap = Map<String, String>.from(tokensMap['USDT'] as Map);
+    // //var g = tokensMap['USDT'];
+    // _tokens.addAll(usdtMap.entries);
 
-    var usdtMap = Map<String, String>.from(tokensMap['USDT'] as Map);
-    //var g = tokensMap['USDT'];
-    _tokens.addAll(usdtMap.entries);
-    setState(() {});
+    coins = CoinUtils.getCoins();
   }
 
   @override
@@ -62,28 +61,30 @@ class _CoinListScreenState extends State<CoinListScreen> {
               ),
             ),
             Expanded(
-              child: _tokens.isEmpty
+              child: coins.isEmpty
                   ? const Center(
                       child: Text('No results'),
                     )
                   : ListView.builder(
-                      itemCount: _tokens.length,
+                      itemCount: coins.length,
                       itemBuilder: (context, index) {
-                        final token = _tokens[index];
+                        final coin = coins[index];
                         return ListTile(
                           title: HighlightedText(
-                            token.key,
+                            coin.name,
                             subText: _searchController.text,
                           ),
                           subtitle: HighlightedText(
-                            token.value,
+                            coin.blockchain,
                             subText: _searchController.text,
                           ),
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => TokenDetailScreen(tokenInfo: token),
+                                builder: (context) => CoinDetailScreen(
+                                  coin: coin,
+                                ),
                               ),
                             );
                           },

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:wallet_test/common/factory/wallet_service_factory.dart';
-import 'package:wallet_test/common/utils.dart';
+import 'package:wallet_test/common/utils/coin_utils.dart';
+import 'package:wallet_test/common/utils/utils.dart';
+import 'package:wallet_test/data/model/coin.dart';
 import 'package:wallet_test/di/dependency_scope.dart';
-import 'package:wallet_test/domain/bitcoin_wallet.dart';
-import 'package:wallet_test/domain/ethereum_wallet.dart';
-import 'package:wallet_test/feature/bitcoin_transaction_screen.dart';
+import 'package:wallet_test/feature/send_transaction_screen.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 class CoinDetailScreen extends StatelessWidget {
+  final Coin coin;
   final TWCoinType coinType;
 
-  const CoinDetailScreen({super.key, required this.coinType});
+  CoinDetailScreen({super.key, required this.coin}) : coinType = CoinUtils.getCoinTypeFromBlockchain(coin.blockchain);
 
   @override
   Widget build(BuildContext context) {
@@ -27,40 +27,21 @@ class CoinDetailScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (coinType == TWCoinType.TWCoinTypeBitcoin) ...[
-                FutureBuilder(
-                  future: WalletServiceFactory.getService<BitcoinWallet>(context).getBalance(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    }
+              FutureBuilder(
+                future: DependencyScope.of(context).serviceFactory.getService(coin.blockchain).getBalance(coin: coin),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
 
-                    final balance = snapshot.data ?? '?';
-                    return Text(
-                      'Balance: $balance BTC',
-                      style: const TextStyle(fontSize: 24),
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
-              ],
-              if (coinType == TWCoinType.TWCoinTypeEthereum) ...[
-                FutureBuilder(
-                  future: WalletServiceFactory.getService<EthereumWallet>(context).getBalance(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    }
-
-                    final balance = snapshot.data ?? '?';
-                    return Text(
-                      'Balance: $balance ETH',
-                      style: const TextStyle(fontSize: 24),
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
-              ],
+                  final balance = snapshot.data ?? '?';
+                  return Text(
+                    'Balance: $balance ${coin.name}',
+                    style: const TextStyle(fontSize: 24),
+                  );
+                },
+              ),
+              const SizedBox(height: 32),
               QrImageView(
                 data: address,
                 size: 200,
@@ -71,13 +52,10 @@ class CoinDetailScreen extends StatelessWidget {
                 style: const TextStyle(fontSize: 24),
                 textAlign: TextAlign.center,
               ),
-              if (coinType == TWCoinType.TWCoinTypeBitcoin || coinType == TWCoinType.TWCoinTypeEthereum) ...[
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () => _openBitcoinScreen(context, coinType),
-                  child: const Text('Send'),
-                ),
-              ],
+              ElevatedButton(
+                onPressed: () => _openBitcoinScreen(context, coinType),
+                child: const Text('Send'),
+              ),
             ],
           ),
         ),
@@ -88,8 +66,8 @@ class CoinDetailScreen extends StatelessWidget {
   void _openBitcoinScreen(BuildContext context, TWCoinType coinType) => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => BitcoinTransactionScreen(
-            coinType: coinType,
+          builder: (context) => SendTransactionScreen(
+            coin: coin,
           ),
         ),
       );

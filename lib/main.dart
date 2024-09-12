@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http_interceptor/http/intercepted_http.dart';
+import 'package:wallet_test/common/factory/wallet_service_factory.dart';
 import 'package:wallet_test/data/library_storage.dart';
 import 'package:wallet_test/data/logger_interceptor.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/di/dependency_scope.dart';
-import 'package:wallet_test/domain/token_service.dart';
 import 'package:wallet_test/feature/import_wallet_screen.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
@@ -17,21 +17,21 @@ void main() {
     LoggerInterceptor(),
   ]);
 
-  final repository = WalletRepository(
+  final walletRepository = WalletRepository(
     libraryStorage: libraryStorage,
     core: core,
   );
 
-  final tokenService = TokenService(
+  final tokenService = WalletServiceFactory(
+    walletRepository: walletRepository,
     http: http,
-    walletRepository: repository,
   );
 
   runApp(
     DependencyScope(
       libraryStorage: libraryStorage,
-      walletRepository: repository,
-      tokenService: tokenService,
+      walletRepository: walletRepository,
+      serviceFactory: tokenService,
       core: core,
       http: http,
       child: const MyApp(),

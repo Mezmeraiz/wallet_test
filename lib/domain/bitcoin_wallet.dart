@@ -4,8 +4,10 @@ import 'package:convert/convert.dart';
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:http_interceptor/http/intercepted_http.dart';
 import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
-import 'package:wallet_test/common/utils.dart';
+import 'package:wallet_test/common/utils/coin_utils.dart';
+import 'package:wallet_test/common/utils/utils.dart';
 import 'package:wallet_test/data/model/bitcoin_address_info.dart';
+import 'package:wallet_test/data/model/coin.dart';
 import 'package:wallet_test/data/model/result.dart';
 import 'package:wallet_test/data/model/utxo.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
@@ -23,8 +25,10 @@ final class BitcoinWallet extends BaseBlockchainWallet {
         _walletRepository = walletRepository;
 
   @override
-  Future<double> getBalance() async {
-    final addressBtc = getAddress(TWCoinType.TWCoinTypeBitcoin);
+  Future<double> getBalance({
+    required Coin coin,
+  }) async {
+    final addressBtc = getAddress(CoinUtils.getCoinTypeFromBlockchain(coin.blockchain));
 
     String url = 'https://rpc.ankr.com/http/btc_blockbook/api/v2/address/$addressBtc';
 
@@ -39,13 +43,14 @@ final class BitcoinWallet extends BaseBlockchainWallet {
       return 0.0;
     }
 
-    final String balanceString = Utils.satoshiToBtc(balance);
+    final balanceBtc = double.parse(balance) / BigInt.from(10).pow(coin.decimals).toDouble();
 
-    return double.tryParse(balanceString) ?? 0.0;
+    return balanceBtc;
   }
 
   @override
   Future<String> sendTransaction({
+    required Coin coin,
     required String toAddress,
     required String amount,
   }) async {

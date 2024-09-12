@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
 import 'package:wallet_test/common/factory/wallet_service_factory.dart';
 import 'package:wallet_test/common/services/wallet_service.dart';
+import 'package:wallet_test/common/utils/coin_utils.dart';
+import 'package:wallet_test/data/model/coin.dart';
+import 'package:wallet_test/di/dependency_scope.dart';
 import 'package:wallet_test/domain/bitcoin_wallet.dart';
 import 'package:wallet_test/domain/ethereum_wallet.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
@@ -11,22 +15,23 @@ enum LoadingStatus {
   loading,
 }
 
-class BitcoinTransactionScreen extends StatefulWidget {
+class SendTransactionScreen extends StatefulWidget {
+  final Coin coin;
   final TWCoinType coinType;
 
-  const BitcoinTransactionScreen({
+  SendTransactionScreen({
     super.key,
-    required this.coinType,
-  });
+    required this.coin,
+  }) : coinType = CoinUtils.getCoinTypeFromBlockchain(coin.blockchain);
 
   @override
-  State<BitcoinTransactionScreen> createState() => _BitcoinTransactionScreenState();
+  State<SendTransactionScreen> createState() => _SendTransactionScreenState();
 }
 
-class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
+class _SendTransactionScreenState extends State<SendTransactionScreen> {
   LoadingStatus status = LoadingStatus.idle;
   String amount = '';
-  late final WalletService _walletService;
+  late final IBlockchainWallet _blockchainWallet;
   late final Map<String, String> _wallets;
   final _addressController = TextEditingController();
 
@@ -50,11 +55,7 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
       _ => throw UnimplementedError(),
     };
 
-    _walletService = switch (_coinType) {
-      TWCoinType.TWCoinTypeBitcoin => WalletServiceFactory.getService<BitcoinWallet>(context),
-      TWCoinType.TWCoinTypeEthereum => WalletServiceFactory.getService<EthereumWallet>(context),
-      _ => throw UnimplementedError(),
-    };
+    _blockchainWallet = DependencyScope.of(context).serviceFactory.getService(widget.coin.blockchain);
   }
 
   @override
@@ -128,7 +129,8 @@ class _BitcoinTransactionScreenState extends State<BitcoinTransactionScreen> {
     late final String result;
 
     try {
-      result = await _walletService.sendTransaction(
+      result = await _blockchainWallet.sendTransaction(
+        coin: widget.coin,
         toAddress: toAddress,
         amount: amount,
       );

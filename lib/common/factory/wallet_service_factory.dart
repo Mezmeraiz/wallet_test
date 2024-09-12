@@ -1,27 +1,33 @@
-import 'package:flutter/material.dart';
+import 'package:http_interceptor/http/http.dart';
 import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
-import 'package:wallet_test/common/services/wallet_service.dart';
-import 'package:wallet_test/di/dependency_scope.dart';
+import 'package:wallet_test/common/utils/coin_utils.dart';
+import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/domain/bitcoin_wallet.dart';
 import 'package:wallet_test/domain/ethereum_wallet.dart';
+import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
-abstract class WalletServiceFactory {
-  static WalletService getService<T extends IBlockchainWallet>(BuildContext context) {
-    final http = DependencyScope.of(context).http;
-    final walletRepository = DependencyScope.of(context).walletRepository;
+class WalletServiceFactory {
+  final WalletRepository walletRepository;
+  final InterceptedHttp http;
 
-    final blockchainWallet = switch (T) {
-      const (BitcoinWallet) => BitcoinWallet(
-          http: http,
-          walletRepository: walletRepository,
-        ),
-      const (EthereumWallet) => EthereumWallet(
-          http: http,
-          walletRepository: walletRepository,
-        ),
-      _ => throw Exception('Unknown wallet type'),
-    };
+  WalletServiceFactory({
+    required this.walletRepository,
+    required this.http,
+  });
 
-    return WalletServiceImpl(blockchainWallet: blockchainWallet);
-  }
+  BitcoinWallet? _bitcoinWallet;
+
+  EthereumWallet? _ethereumWallet;
+
+  BaseBlockchainWallet getService(String blockchain) => switch (CoinUtils.getCoinTypeFromBlockchain(blockchain)) {
+        TWCoinType.TWCoinTypeBitcoin => _bitcoinWallet ??= BitcoinWallet(
+            http: http,
+            walletRepository: walletRepository,
+          ),
+        TWCoinType.TWCoinTypeEthereum => _ethereumWallet ??= EthereumWallet(
+            http: http,
+            walletRepository: walletRepository,
+          ),
+        _ => throw Exception('Unknown wallet type'),
+      };
 }
