@@ -237,7 +237,6 @@ final class EthereumWallet extends BaseBlockchainWallet {
 
   Future<String> _sendTokenTransaction(
     Coin coin,
-    // required MapEntry<String, String> tokenInfo,
     String toAddress,
     String amount,
   ) async {
@@ -246,8 +245,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
     final contractAddress = coin.contractAddress;
     final coinAddress = _walletRepository.walletGetAddressForCoin(coinType);
 
-    //final addressEth = getAddress(TWCoinType.TWCoinTypeEthereum);
-    final privateKeyEth = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeEthereum).toList();
+    final privateKeyEth = _walletRepository.getKeyForCoin(coinType).toList();
 
     try {
       // Receive nonce
@@ -326,15 +324,9 @@ final class EthereumWallet extends BaseBlockchainWallet {
             throw Exception('Failed to send transaction ${estimatedGasResponse.reasonPhrase}');
           }
 
-          var g = jsonDecode(estimatedGasResponse.body);
-
-          final estimatedGas = Result.fromJson(g).result;
-
-          var hh = BigInt.parse(estimatedGas) * gasPriceBigInt;
+          final estimatedGas = Result.fromJson(jsonDecode(estimatedGasResponse.body)).result;
 
           final gasLimit = _bigIntToUint8List(BigInt.parse(estimatedGas));
-
-          //final gasLimit = _intToUint8List(100000);
 
           final erc20Transfer = ethereum.Transaction_ERC20Transfer(
             to: toAddress,
@@ -416,10 +408,6 @@ final class EthereumWallet extends BaseBlockchainWallet {
       }),
     );
 
-    var body = response.body;
-
-    var f = jsonDecode(body);
-
-    return Result.fromJson(f).result;
+    return Result.fromJson(jsonDecode(response.body)).result;
   }
 }
