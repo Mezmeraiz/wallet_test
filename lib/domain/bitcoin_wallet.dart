@@ -54,15 +54,15 @@ final class BitcoinWallet extends BaseBlockchainWallet {
     required String toAddress,
     required String amount,
   }) async {
-    final amountBtc = Utils.btcToSatoshi(amount);
+    final amountInSatoshi = Utils.valueToMinUnit(double.parse(amount), coin.decimals).toString();
 
-    TWCoinType coin = TWCoinType.TWCoinTypeBitcoin;
+    TWCoinType coinType = TWCoinType.TWCoinTypeBitcoin;
 
     final addressBtc = getAddress(TWCoinType.TWCoinTypeBitcoin);
     final changeAddress = addressBtc;
     final secretPrivateKeyBtc = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeBitcoin).toList();
 
-    List<Utxo> selectedUtxos = await _loadUtxos(addressBtc, amountBtc);
+    List<Utxo> selectedUtxos = await _loadUtxos(addressBtc, amountInSatoshi);
 
     final Iterable<bitcoin.UnspentTransaction> unspentTransactions = selectedUtxos
         .map((utxo) => bitcoin.UnspentTransaction(
@@ -72,17 +72,17 @@ final class BitcoinWallet extends BaseBlockchainWallet {
                 index: utxo.vout,
                 sequence: 0xffffffff,
               ),
-              script: _walletRepository.lockScriptForAddress(addressBtc, coin),
+              script: _walletRepository.lockScriptForAddress(addressBtc, coinType),
             ))
         .toList();
 
     final signingInput = bitcoin.SigningInput(
-      amount: $fixnum.Int64.parseInt(amountBtc),
-      hashType: _walletRepository.hashTypeForCoin(coin),
+      amount: $fixnum.Int64.parseInt(amountInSatoshi),
+      hashType: _walletRepository.hashTypeForCoin(coinType),
       toAddress: toAddress,
       changeAddress: changeAddress,
       byteFee: $fixnum.Int64.parseInt('10'),
-      coinType: coin.value,
+      coinType: coinType.value,
       utxo: unspentTransactions,
       privateKey: [
         secretPrivateKeyBtc,
@@ -90,11 +90,11 @@ final class BitcoinWallet extends BaseBlockchainWallet {
     );
 
     final transactionPlan = bitcoin.TransactionPlan.fromBuffer(
-      _walletRepository.signerPlan(signingInput.writeToBuffer(), coin).toList(),
+      _walletRepository.signerPlan(signingInput.writeToBuffer(), coinType).toList(),
     );
     signingInput.plan = transactionPlan;
     signingInput.amount = transactionPlan.amount;
-    final sign = _walletRepository.sign(signingInput.writeToBuffer(), coin);
+    final sign = _walletRepository.sign(signingInput.writeToBuffer(), coinType);
     final signingOutput = bitcoin.SigningOutput.fromBuffer(sign);
     final rawTx = Utils.bytesToHex(signingOutput.encoded);
 

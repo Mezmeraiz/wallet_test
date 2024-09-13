@@ -22,9 +22,15 @@ class Utils {
 
   static String bytesToHex(List<int> bytes) => hex.encode(Uint8List.fromList(bytes));
 
-  static num unitToValue(num unit, int decimals) => (unit * BigInt).round().toString();
+  static double minUnitToValue(BigInt minUnit, int decimals) =>
+      minUnit.toDouble() / BigInt.from(10).pow(decimals).toDouble();
 
-  static String valueToUnit(String satoshi) => (double.parse(satoshi) / _oneBtcInSatoshi).toString();
+  static BigInt valueToMinUnit(double value, int decimals) =>
+      BigInt.from(value * BigInt.from(10).pow(decimals).toDouble());
+
+  //static String btcToSatoshi(String btc) => (double.parse(btc) * _oneBtcInSatoshi).round().toString();
+
+  //static String satoshiToBtc(String satoshi) => (double.parse(satoshi) / _oneBtcInSatoshi).toString();
 
   static String getCoinName(TWCoinType coinType) => switch (coinType) {
         TWCoinType.TWCoinTypeAeternity => 'Aeternity',

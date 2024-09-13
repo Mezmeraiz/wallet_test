@@ -156,6 +156,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
     String toAddress,
     String amount,
   ) async {
+    final amountInWei = Utils.valueToMinUnit(double.parse(amount), coin.decimals);
     final addressEth = getAddress(TWCoinType.TWCoinTypeEthereum);
     final privateKeyEth = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeEthereum).toList();
 
@@ -198,20 +199,14 @@ final class EthereumWallet extends BaseBlockchainWallet {
           final gasPriceResult = Result.fromJson(jsonDecode(gasPriceResponse.body)).result;
           final gasPrice = _bigIntToUint8List(BigInt.parse(gasPriceResult));
           final gasLimit = _intToUint8List(21000);
-          final double amountDouble = double.parse(amount);
-
-          // Минимальный gas limit для простой транзакции
-          // 1 ETH in Wei
-          final amountInWei = BigInt.from(amountDouble * 1e18);
 
           final transaction = ethereum.Transaction(
             transfer: ethereum.Transaction_Transfer(
-              //amount: [amountInWei.toInt()],
               amount: _bigIntToUint8List(amountInWei),
             ),
           );
 
-          final chainId = _bigIntToUint8List(BigInt.parse('0x4268'));
+          final chainId = _bigIntToUint8List(BigInt.parse('0x4268')); // TestNet
 
           final signedTransaction = ethereum.SigningInput(
             chainId: chainId,
@@ -246,6 +241,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
     String toAddress,
     String amount,
   ) async {
+    final amountInMinUnits = BigInt.from(double.parse(amount) * BigInt.from(10).pow(coin.decimals).toInt());
     final coinType = CoinUtils.getCoinTypeFromBlockchain(coin.blockchain);
     final contractAddress = coin.contractAddress;
     final coinAddress = _walletRepository.walletGetAddressForCoin(coinType);
@@ -295,14 +291,14 @@ final class EthereumWallet extends BaseBlockchainWallet {
 
           final erc20Transfer = ethereum.Transaction_ERC20Transfer(
             to: toAddress,
-            amount: _bigIntToUint8List(BigInt.parse(amount)), // Закодированное количество токенов
+            amount: _bigIntToUint8List(amountInMinUnits), // Закодированное количество токенов
           );
 
           final transaction = ethereum.Transaction(
             erc20Transfer: erc20Transfer, // Указываем поле erc20Transfer
           );
 
-          final chainId = _bigIntToUint8List(BigInt.parse('0x4268'));
+          final chainId = _bigIntToUint8List(BigInt.parse('0x1')); // MainNet
 
           final signedTransaction = ethereum.SigningInput(
             chainId: chainId,
@@ -373,6 +369,10 @@ final class EthereumWallet extends BaseBlockchainWallet {
       }),
     );
 
-    return Result.fromJson(jsonDecode(response.body)).result;
+    var body = response.body;
+
+    var f = jsonDecode(body);
+
+    return Result.fromJson(f).result;
   }
 }

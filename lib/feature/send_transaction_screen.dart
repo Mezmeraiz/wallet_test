@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
-import 'package:wallet_test/common/factory/wallet_service_factory.dart';
-import 'package:wallet_test/common/services/wallet_service.dart';
 import 'package:wallet_test/common/utils/coin_utils.dart';
 import 'package:wallet_test/data/model/coin.dart';
 import 'package:wallet_test/di/dependency_scope.dart';
-import 'package:wallet_test/domain/bitcoin_wallet.dart';
-import 'package:wallet_test/domain/ethereum_wallet.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 enum LoadingStatus {
@@ -43,12 +39,10 @@ class _SendTransactionScreenState extends State<SendTransactionScreen> {
 
     _wallets = switch (_coinType) {
       TWCoinType.TWCoinTypeBitcoin => {
-          'Макс': 'bc1q92e0ujhxml6wtd9gsn3aa7276f5qpxr6gtk9qh',
           'Толя': 'bc1q8st5wrn60v25lr9jpa7t7h058y5x4w44ffqjhp',
           'Олег': 'bc1qff4tp6dn3sgq0kfedyg509qedlc8j9d33prmtv',
         },
       TWCoinType.TWCoinTypeEthereum => {
-          'Макс': '0xF35080873f54519C0aC40D11435e0205a998fFaf',
           'Толя': '0xB76b77AeA6f5bBe1685E0F13020Dc6cE8c7C4C6F',
           'Олег': '0xE0b77680f7423f60023259e9A42a180BDEb49BC6',
         },

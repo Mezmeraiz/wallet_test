@@ -13,7 +13,7 @@ class ImportWalletScreen extends StatefulWidget {
 }
 
 class _ImportWalletScreenState extends State<ImportWalletScreen> {
-  var mnemonic = 'source myth gloom bless ring sunny spawn verify join park dolphin dash';
+  var mnemonic = '';
   late final WalletRepository _walletRepository;
 
   @override
