@@ -17,22 +17,10 @@ class _CoinListScreenState extends State<CoinListScreen> {
   final _searchController = TextEditingController();
   final _coins = <TWCoinType>[];
   late final List<Coin> coins;
-  //final _tokens = <MapEntry<String, String>>[];
 
   @override
   void initState() {
     super.initState();
-
-    _loadTokens();
-  }
-
-  void _loadTokens() async {
-    // String jsonString = await rootBundle.loadString(AssetJson.tokens);
-    // var tokensMap = json.decode(jsonString) as Map<String, dynamic>;
-    //
-    // var usdtMap = Map<String, String>.from(tokensMap['USDT'] as Map);
-    // //var g = tokensMap['USDT'];
-    // _tokens.addAll(usdtMap.entries);
 
     coins = CoinUtils.getCoins();
   }
@@ -92,36 +80,6 @@ class _CoinListScreenState extends State<CoinListScreen> {
                       },
                     ),
             ),
-            // Expanded(
-            //   child: _coins.isEmpty
-            //       ? const Center(
-            //           child: Text('No results'),
-            //         )
-            //       : ListView.builder(
-            //           itemCount: _coins.length,
-            //           itemBuilder: (context, index) {
-            //             final coinType = _coins[index];
-            //             return ListTile(
-            //               title: HighlightedText(
-            //                 Utils.getCoinName(coinType),
-            //                 subText: _searchController.text,
-            //               ),
-            //               subtitle: HighlightedText(
-            //                 Utils.getCoinTicker(coinType),
-            //                 subText: _searchController.text,
-            //               ),
-            //               onTap: () {
-            //                 Navigator.push(
-            //                   context,
-            //                   MaterialPageRoute(
-            //                     builder: (context) => CoinDetailScreen(coinType: coinType),
-            //                   ),
-            //                 );
-            //               },
-            //             );
-            //           },
-            //         ),
-            // ),
           ],
         ),
       );
