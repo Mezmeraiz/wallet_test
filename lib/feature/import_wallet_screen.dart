@@ -20,9 +20,6 @@ class _ImportWalletScreenState extends State<ImportWalletScreen> {
   void initState() {
     super.initState();
     _walletRepository = DependencyScope.of(context).walletRepository;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _importWallet();
-    });
   }
 
   @override

@@ -59,7 +59,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
   Future<double> _getCoinBalance(
     Coin coin,
   ) async {
-    final addressEth = getAddress(TWCoinType.TWCoinTypeEthereum);
+    final addressEth = getAddress(CoinUtils.getCoinTypeFromBlockchain(coin.blockchain));
 
     final payload = {
       'jsonrpc': '2.0',
@@ -286,8 +286,55 @@ final class EthereumWallet extends BaseBlockchainWallet {
 
         if (gasPriceResponse.statusCode == 200) {
           final gasPriceResult = Result.fromJson(jsonDecode(gasPriceResponse.body)).result;
-          final gasPrice = _bigIntToUint8List(BigInt.parse(gasPriceResult));
-          final gasLimit = _intToUint8List(60000);
+          var gasPriceBigInt = BigInt.parse(gasPriceResult);
+          final gasPrice = _bigIntToUint8List(gasPriceBigInt);
+
+          // Получаем keccak хэш для метода `transfer(address,uint256)`
+          final Uint8List list = keccakUtf8('transfer(address,uint256)');
+          final hexString = hex.encode(list);
+          final methodHex = hexString.substring(0, 8); // Первые 4 байта сигнатуры
+
+          // Формируем данные транзакции (вызов метода `transfer`)
+          final data = '0x$methodHex'
+              '000000000000000000000000${toAddress.substring(2)}' // Адрес получателя
+              '${amountInMinUnits.toRadixString(16).padLeft(64, '0')}'; // Сумма перевода
+
+          final fromAddress = getAddress(coinType);
+
+          final estimatedGasResponse = await _http.post(
+            Uri.parse(_url),
+            headers: {
+              HttpHeaders.contentTypeHeader: ContentType.json.toString(),
+            },
+            body: jsonEncode({
+              'jsonrpc': '2.0',
+              'method': 'eth_estimateGas',
+              'params': [
+                {
+                  'from': fromAddress,
+                  'to': contractAddress,
+                  'value': '0x0',
+                  'data': data,
+                },
+                'latest'
+              ],
+              'id': 1,
+            }),
+          );
+
+          if (gasPriceResponse.statusCode != 200) {
+            throw Exception('Failed to send transaction ${estimatedGasResponse.reasonPhrase}');
+          }
+
+          var g = jsonDecode(estimatedGasResponse.body);
+
+          final estimatedGas = Result.fromJson(g).result;
+
+          var hh = BigInt.parse(estimatedGas) * gasPriceBigInt;
+
+          final gasLimit = _bigIntToUint8List(BigInt.parse(estimatedGas));
+
+          //final gasLimit = _intToUint8List(100000);
 
           final erc20Transfer = ethereum.Transaction_ERC20Transfer(
             to: toAddress,
