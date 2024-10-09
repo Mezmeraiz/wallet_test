@@ -13,13 +13,17 @@ class ImportWalletScreen extends StatefulWidget {
 }
 
 class _ImportWalletScreenState extends State<ImportWalletScreen> {
-  var mnemonic = '';
+  //var mnemonic = 'source myth gloom bless ring sunny spawn verify join park dolphin dash';
+  var mnemonic = 'dawn cycle able climb unique final donate measure excess panic ten taste';
   late final WalletRepository _walletRepository;
 
   @override
   void initState() {
     super.initState();
     _walletRepository = DependencyScope.of(context).walletRepository;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _importWallet();
+    });
   }
 
   @override

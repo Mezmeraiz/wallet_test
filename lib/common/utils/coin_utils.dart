@@ -5,6 +5,19 @@ import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 abstract class CoinUtils {
   static List<Coin> getCoins() => [
         const Coin(
+          name: 'TRX',
+          type: CoinType.coin,
+          blockchain: 'Tron20',
+          decimals: 6,
+        ),
+        const Coin(
+          name: 'USDT',
+          type: CoinType.token,
+          blockchain: 'Tron20',
+          contractAddress: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+          decimals: 6,
+        ),
+        const Coin(
           name: 'BTC',
           type: CoinType.coin,
           blockchain: 'Bitcoin',
@@ -32,16 +45,9 @@ abstract class CoinUtils {
         const Coin(
           name: 'USDT',
           type: CoinType.token,
-          blockchain: 'Tron20',
-          contractAddress: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
-          decimals: 6,
-        ),
-        const Coin(
-          name: 'USDT',
-          type: CoinType.token,
           blockchain: 'BNB Smart Chain (BEP20)',
           contractAddress: '0x55d398326f99059ff775485246999027b3197955',
-          decimals: 6,
+          decimals: 18,
         ),
         const Coin(
           name: 'SHIB',

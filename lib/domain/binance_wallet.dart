@@ -15,182 +15,18 @@ import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 import 'package:wallet_test/protobuf/Ethereum.pb.dart' as ethereum;
 import 'package:web3dart/crypto.dart';
 
-//const String _testUrl = 'https://rpc.ankr.com/eth';
-//const String _testUrl = 'https://rpc.ankr.com/eth_holesky';
-const String _testUrl = 'https://eth.llamarpc.com';
+const String _testUrl = 'https://rpc.ankr.com/bsc';
+//const String _testUrl = 'https://rpc.ankr.com/bsc_testnet_chapel';
 
-final class EthereumWallet extends BaseBlockchainWallet {
+final class BinanceWallet extends BaseBlockchainWallet {
   final InterceptedHttp _http;
   final WalletRepository _walletRepository;
 
-  EthereumWallet({
+  BinanceWallet({
     required InterceptedHttp http,
     required super.walletRepository,
   })  : _http = http,
         _walletRepository = walletRepository;
-
-  @override
-  Future<void> loadCoinInfo(List<Coin> coin) async {
-    final address = getAddress(CoinUtils.getCoinTypeFromBlockchain('Ethereum'));
-
-    final payload = [
-      _getCoinBalancePayload(address),
-      _getTokenBalancePayload(address, '0xdac17f958d2ee523a2206206994597c13d831ec7'),
-      _getTokenDecimalPayload(address, '0xdac17f958d2ee523a2206206994597c13d831ec7'),
-      _getTokenBalancePayload(address, '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce'),
-      _getTokenDecimalPayload(address, '0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce'),
-    ];
-
-    final response = await _http.post(
-      Uri.parse(_testUrl),
-      headers: {
-        HttpHeaders.contentTypeHeader: ContentType.json.toString(),
-      },
-      body: jsonEncode(payload),
-    );
-
-    if (response.statusCode == 200) {
-      // Парсим результат ответа
-      final List<dynamic> responseData = jsonDecode(response.body);
-
-      var f = responseData.cast<Map<String, dynamic>>().map((e) => _parseBigInt(Result.fromJson(e).result)).toList();
-      print(f);
-    } else {
-      throw Exception('Failed to load transactions: ${response.reasonPhrase}');
-    }
-  }
-
-  Map<String, Object> _getCoinBalancePayload(String address) => {
-        'jsonrpc': '2.0',
-        'method': 'eth_getBalance',
-        'params': [address, 'latest'],
-        'id': 1,
-      };
-
-  Map<String, Object> _ethCall(
-    String contractAddress,
-    String data,
-  ) {
-    final param = {
-      'to': contractAddress, // Адрес контракта USDT
-      'data': data,
-    };
-
-    final payload = {
-      'jsonrpc': '2.0',
-      'method': 'eth_call',
-      'params': [
-        param,
-        'latest',
-      ],
-    };
-
-    return payload;
-  }
-
-  Map<String, Object> _getTokenBalancePayload(
-    String coinAddress,
-    String contractAddress,
-  ) {
-    final methodHex = hex.encode(keccakUtf8('balanceOf(address)')).substring(0, 8);
-    final data = '0x${methodHex}000000000000000000000000${coinAddress.substring(2)}';
-
-    return _ethCall(
-      contractAddress,
-      data,
-    );
-  }
-
-  Map<String, Object> _getTokenDecimalPayload(
-    String coinAddress,
-    String contractAddress,
-  ) {
-    final methodHex = hex.encode(keccakUtf8('decimals()')).substring(0, 8);
-    final data = '0x$methodHex';
-
-    return _ethCall(
-      contractAddress,
-      data,
-    );
-  }
-
-  @override
-  Future<void> getTransactions() async {
-    final addressEth = getAddress(CoinUtils.getCoinTypeFromBlockchain('Ethereum'));
-
-    const String url =
-        'https://rpc.ankr.com/multichain/21fd90cf03434b65e8c3d165e00193674368c97f925167da8502b59cac084a74';
-
-    final payload = {
-      'jsonrpc': '2.0',
-      'method': 'ankr_getTransactionsByAddress',
-      'params': {'address': addressEth, 'fromBlock': '0x0', 'toBlock': 'latest', 'sort': 'desc'},
-      'id': 1,
-    };
-
-    final payloadToken = {
-      'jsonrpc': '2.0',
-      'method': 'ankr_getTokenTransfers',
-      'params': {'address': addressEth, 'fromBlock': '0x0', 'toBlock': 'latest', 'sort': 'desc'},
-      'id': 1,
-    };
-
-    try {
-      // Отправляем POST запрос на Ankr API
-      final response = await _http.post(
-        Uri.parse(url),
-        headers: {
-          HttpHeaders.contentTypeHeader: ContentType.json.toString(),
-        },
-        body: jsonEncode(payload),
-      );
-
-      final responseToken = await _http.post(
-        Uri.parse(url),
-        headers: {
-          HttpHeaders.contentTypeHeader: ContentType.json.toString(),
-        },
-        body: jsonEncode(payloadToken),
-      );
-
-      if (response.statusCode == 200) {
-        // Парсим результат ответа
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print('Transactions: ${responseData['result']}');
-      } else {
-        throw Exception('Failed to load transactions: ${response.reasonPhrase}');
-      }
-
-      if (responseToken.statusCode == 200) {
-        // Парсим результат ответа
-        final Map<String, dynamic> responseData = jsonDecode(responseToken.body);
-        print('Transactions: ${responseData['result']}');
-      } else {
-        throw Exception('Failed to load transactions: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      print('Error: $e');
-    }
-  }
-
-  @override
-  Future<String> sendTransaction({
-    required Coin coin,
-    required String toAddress,
-    required String amount,
-  }) =>
-      switch (coin.type) {
-        CoinType.coin => _sendTransaction(
-            coin,
-            toAddress,
-            amount,
-          ),
-        CoinType.token => _sendTokenTransaction(
-            coin,
-            toAddress,
-            amount,
-          ),
-      };
 
   @override
   Future<double> getBalance({
@@ -239,8 +75,6 @@ final class EthereumWallet extends BaseBlockchainWallet {
     }
   }
 
-  BigInt _parseBigInt(String value) => BigInt.parse(value.substring(2), radix: 16);
-
   Future<double> _getTokenBalance(Coin coin) async {
     final coinType = CoinUtils.getCoinTypeFromBlockchain(coin.blockchain);
     final contractAddress = coin.contractAddress;
@@ -276,8 +110,9 @@ final class EthereumWallet extends BaseBlockchainWallet {
         body: jsonEncode(payload),
       );
 
+      var responseBody = jsonDecode(response.body);
+
       if (response.statusCode == 200) {
-        var g = response.body;
         var result = Result.fromJson(jsonDecode(response.body)).result;
 
         // Убираем "0x" из начала строки
@@ -304,12 +139,15 @@ final class EthereumWallet extends BaseBlockchainWallet {
     String toAddress,
     String amount,
   ) async {
+    // Переводим значение в минимальную единицу (обычно Wei)
     final amountInWei = Utils.valueToMinUnit(double.parse(amount), coin.decimals);
-    final addressEth = getAddress(TWCoinType.TWCoinTypeEthereum);
-    final privateKeyEth = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeEthereum).toList();
+
+    // Получаем адрес и приватный ключ для BSC
+    final addressBsc = getAddress(TWCoinType.TWCoinTypeSmartChain);
+    final privateKeyBsc = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeSmartChain).toList();
 
     try {
-      // Receive nonce
+      // Получение nonce
       final nonceResponse = await _http.post(
         Uri.parse(_testUrl),
         headers: {
@@ -318,18 +156,16 @@ final class EthereumWallet extends BaseBlockchainWallet {
         body: jsonEncode({
           'jsonrpc': '2.0',
           'method': 'eth_getTransactionCount',
-          'params': [addressEth, 'latest'],
-          // TODO: get response ID
+          'params': [addressBsc, 'latest'],
           'id': 1,
         }),
       );
 
       if (nonceResponse.statusCode == 200) {
         final nonceResult = Result.fromJson(jsonDecode(nonceResponse.body)).result;
-
         final nonce = _bigIntToUint8List(BigInt.parse(nonceResult.substring(2), radix: 16));
 
-        // Returns the current price per gas in wei.
+        // Получение текущей цены газа
         final gasPriceResponse = await _http.post(
           Uri.parse(_testUrl),
           headers: {
@@ -348,29 +184,34 @@ final class EthereumWallet extends BaseBlockchainWallet {
           final gasPrice = _bigIntToUint8List(BigInt.parse(gasPriceResult));
           final gasLimit = _intToUint8List(21000);
 
+          // Формирование транзакции
           final transaction = ethereum.Transaction(
             transfer: ethereum.Transaction_Transfer(
               amount: _bigIntToUint8List(amountInWei),
             ),
           );
 
-          final chainId = _bigIntToUint8List(BigInt.parse('0x4268')); // TestNet
+          // Указываем chainId для Binance Smart Chain (Mainnet: 56, Testnet: 97)
+          final chainId = _bigIntToUint8List(BigInt.from(97)); // TestNet BSC
 
+          // Подписываем транзакцию
           final signedTransaction = ethereum.SigningInput(
             chainId: chainId,
             gasPrice: gasPrice,
             gasLimit: gasLimit,
             toAddress: toAddress,
             transaction: transaction,
-            privateKey: privateKeyEth,
+            privateKey: privateKeyBsc,
             nonce: nonce,
           );
 
-          TWCoinType coin = TWCoinType.TWCoinTypeEthereum;
+          // Указываем тип монеты для BSC
+          TWCoinType coin = TWCoinType.TWCoinTypeSmartChain;
           final sign = _walletRepository.sign(signedTransaction.writeToBuffer(), coin);
           final signingOutput = ethereum.SigningOutput.fromBuffer(sign);
           final rawTx = Utils.bytesToHex(signingOutput.encoded);
 
+          // Отправка сырой транзакции в сеть
           return _sendRawTransaction(rawTx, true);
         } else {
           throw Exception('Failed to send transaction ${gasPriceResponse.reasonPhrase}');
@@ -462,15 +303,16 @@ final class EthereumWallet extends BaseBlockchainWallet {
                   'value': '0x0',
                   'data': data,
                 },
-                'latest'
               ],
               'id': 1,
             }),
           );
 
-          if (gasPriceResponse.statusCode != 200) {
+          if (estimatedGasResponse.statusCode != 200) {
             throw Exception('Failed to send transaction ${estimatedGasResponse.reasonPhrase}');
           }
+
+          var f = jsonDecode(estimatedGasResponse.body);
 
           final estimatedGas = Result.fromJson(jsonDecode(estimatedGasResponse.body)).result;
 
@@ -485,7 +327,7 @@ final class EthereumWallet extends BaseBlockchainWallet {
             erc20Transfer: erc20Transfer, // Указываем поле erc20Transfer
           );
 
-          final chainId = _bigIntToUint8List(BigInt.parse('0x1')); // MainNet
+          final chainId = _bigIntToUint8List(BigInt.from(56)); // MainNet
 
           final signedTransaction = ethereum.SigningInput(
             chainId: chainId,
@@ -556,6 +398,91 @@ final class EthereumWallet extends BaseBlockchainWallet {
       }),
     );
 
+    var f = jsonDecode(response.body);
+
     return Result.fromJson(jsonDecode(response.body)).result;
+  }
+
+  @override
+  Future<void> getTransactions() async {
+    final addressEth = getAddress(CoinUtils.getCoinTypeFromBlockchain('Ethereum'));
+
+    const String url =
+        'https://rpc.ankr.com/multichain/21fd90cf03434b65e8c3d165e00193674368c97f925167da8502b59cac084a74';
+
+    final payload = {
+      'jsonrpc': '2.0',
+      'method': 'ankr_getTransactionsByAddress',
+      'params': {'address': addressEth, 'fromBlock': '0x0', 'toBlock': 'latest', 'sort': 'desc'},
+      'id': 1,
+    };
+
+    final payloadToken = {
+      'jsonrpc': '2.0',
+      'method': 'ankr_getTokenTransfers',
+      'params': {'address': addressEth, 'fromBlock': '0x0', 'toBlock': 'latest', 'sort': 'desc'},
+      'id': 1,
+    };
+
+    try {
+      // Отправляем POST запрос на Ankr API
+      final response = await _http.post(
+        Uri.parse(url),
+        headers: {
+          HttpHeaders.contentTypeHeader: ContentType.json.toString(),
+        },
+        body: jsonEncode(payload),
+      );
+
+      final responseToken = await _http.post(
+        Uri.parse(url),
+        headers: {
+          HttpHeaders.contentTypeHeader: ContentType.json.toString(),
+        },
+        body: jsonEncode(payloadToken),
+      );
+
+      if (response.statusCode == 200) {
+        // Парсим результат ответа
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print('Transactions: ${responseData['result']}');
+      } else {
+        throw Exception('Failed to load transactions: ${response.reasonPhrase}');
+      }
+
+      if (responseToken.statusCode == 200) {
+        // Парсим результат ответа
+        final Map<String, dynamic> responseData = jsonDecode(responseToken.body);
+        print('Transactions: ${responseData['result']}');
+      } else {
+        throw Exception('Failed to load transactions: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
+  @override
+  Future<String> sendTransaction({
+    required Coin coin,
+    required String toAddress,
+    required String amount,
+  }) =>
+      switch (coin.type) {
+        CoinType.coin => _sendTransaction(
+            coin,
+            toAddress,
+            amount,
+          ),
+        CoinType.token => _sendTokenTransaction(
+            coin,
+            toAddress,
+            amount,
+          ),
+      };
+
+  @override
+  Future<void> loadCoinInfo(List<Coin> coin) async {
+    // TODO: implement loadCoinInfo
   }
 }

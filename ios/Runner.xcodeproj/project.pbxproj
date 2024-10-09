@@ -10,8 +10,8 @@
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		50A6B07F2C7E0F0D00D6578E /* WalletCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 50A6B07E2C7E0F0D00D6578E /* WalletCore.framework */; };
-		50A6B0802C7E0F0D00D6578E /* WalletCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 50A6B07E2C7E0F0D00D6578E /* WalletCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		5055ACA12C9C080700AF4DCB /* libTrustWalletCore.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 5055ACA02C9C080700AF4DCB /* libTrustWalletCore.dylib */; };
+		5055ACA22C9C080700AF4DCB /* libTrustWalletCore.dylib in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 5055ACA02C9C080700AF4DCB /* libTrustWalletCore.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -35,7 +35,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				50A6B0802C7E0F0D00D6578E /* WalletCore.framework in Embed Frameworks */,
+				5055ACA22C9C080700AF4DCB /* libTrustWalletCore.dylib in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -49,6 +49,7 @@
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		501977952C62C6B700335412 /* libTrustWalletCore.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libTrustWalletCore.dylib; path = "../../../../wallet-core/build/libTrustWalletCore.dylib"; sourceTree = "<group>"; };
+		5055ACA02C9C080700AF4DCB /* libTrustWalletCore.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libTrustWalletCore.dylib; path = ../macos/libTrustWalletCore.dylib; sourceTree = "<group>"; };
 		50A6B07E2C7E0F0D00D6578E /* WalletCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WalletCore.framework; sourceTree = "<group>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -67,7 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				50A6B07F2C7E0F0D00D6578E /* WalletCore.framework in Frameworks */,
+				5055ACA12C9C080700AF4DCB /* libTrustWalletCore.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +86,7 @@
 		50A6B07D2C7E0F0D00D6578E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				5055ACA02C9C080700AF4DCB /* libTrustWalletCore.dylib */,
 				50A6B07E2C7E0F0D00D6578E /* WalletCore.framework */,
 			);
 			name = Frameworks;
@@ -573,7 +575,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.walletTest;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.walletTestt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";

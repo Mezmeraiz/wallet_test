@@ -26,7 +26,7 @@ class SendTransactionScreen extends StatefulWidget {
 
 class _SendTransactionScreenState extends State<SendTransactionScreen> {
   LoadingStatus status = LoadingStatus.idle;
-  String amount = '';
+  String amount = '1';
   late final IBlockchainWallet _blockchainWallet;
   late final Map<String, String> _wallets;
   final _addressController = TextEditingController();
@@ -45,6 +45,12 @@ class _SendTransactionScreenState extends State<SendTransactionScreen> {
       TWCoinType.TWCoinTypeEthereum => {
           'Толя': '0xB76b77AeA6f5bBe1685E0F13020Dc6cE8c7C4C6F',
           'Олег': '0xE0b77680f7423f60023259e9A42a180BDEb49BC6',
+        },
+      TWCoinType.TWCoinTypeSmartChain => {
+          'Макс': '0x100807F60D0BA07BAdEC3F3cAEF204086Da0dd65',
+        },
+      TWCoinType.TWCoinTypeTron => {
+          'Макс': 'TQhrwC2MnqppuaJHgngj6oqae26nC4e4Qt',
         },
       _ => throw UnimplementedError(),
     };

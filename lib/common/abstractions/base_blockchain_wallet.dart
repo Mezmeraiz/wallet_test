@@ -4,6 +4,8 @@ import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 
 abstract interface class IBlockchainWallet {
+  Future<void> loadCoinInfo(List<Coin> coin);
+
   Future<String> sendTransaction({
     required Coin coin,
     required String toAddress,
@@ -13,6 +15,8 @@ abstract interface class IBlockchainWallet {
   Future<double> getBalance({
     required Coin coin,
   });
+
+  Future<void> getTransactions();
 }
 
 abstract base class BaseBlockchainWallet implements IBlockchainWallet {

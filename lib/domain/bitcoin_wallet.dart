@@ -25,6 +25,29 @@ final class BitcoinWallet extends BaseBlockchainWallet {
         _walletRepository = walletRepository;
 
   @override
+  Future<void> getTransactions() async {
+    final addressBtc = getAddress(CoinUtils.getCoinTypeFromBlockchain('Bitcoin'));
+
+    String url =
+        'https://rpc.ankr.com/http/btc_blockbook/api/v2/address/bc1q8st5wrn60v25lr9jpa7t7h058y5x4w44ffqjhp?details=txs';
+
+    final response = await _http.get(
+      Uri.parse(url),
+    );
+
+    var g = jsonDecode(response.body);
+
+    final result = BitcoinAddressInfo.fromJson(jsonDecode(response.body));
+
+    // final balance = result.;
+    // if (balance == null) {
+    //   return 0.0;
+    // }
+    //
+    // final balanceBtc = double.parse(balance) / BigInt.from(10).pow(coin.decimals).toDouble();
+  }
+
+  @override
   Future<double> getBalance({
     required Coin coin,
   }) async {
@@ -150,5 +173,10 @@ final class BitcoinWallet extends BaseBlockchainWallet {
     );
 
     return Result.fromJson(jsonDecode(response.body)).result;
+  }
+
+  @override
+  Future<void> loadCoinInfo(List<Coin> coin) async {
+    // TODO: implement loadCoinInfo
   }
 }
