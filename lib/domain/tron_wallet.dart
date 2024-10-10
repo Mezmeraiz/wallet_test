@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:convert/convert.dart';
+import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:flutter/foundation.dart';
 import 'package:http_interceptor/http/intercepted_http.dart';
 import 'package:wallet_test/common/abstractions/base_blockchain_wallet.dart';
@@ -14,9 +15,8 @@ import 'package:wallet_test/data/model/result.dart';
 import 'package:wallet_test/data/repository/wallet_repository.dart';
 import 'package:wallet_test/ffi_impl/generated_bindings.dart';
 import 'package:wallet_test/protobuf/Ethereum.pb.dart' as ethereum;
-import 'package:wallet_test/protobuf/Tron.pb.dart' as tron;
+import 'package:wallet_test/protobuf/Tron.pb.dart' as Tron;
 import 'package:web3dart/crypto.dart';
-import 'package:fixnum/fixnum.dart' as $fixnum;
 
 const String _tronUrl = 'https://api.trongrid.io/jsonrpc';
 const String _tronRestUrl = 'https://api.trongrid.io';
@@ -35,34 +35,6 @@ final class TronWallet extends BaseBlockchainWallet {
   })  : _http = http,
         _walletRepository = walletRepository;
 
-  // Future<Map<String, dynamic>?> _createTronTransaction(
-  Future<String> _createTronTransaction(
-    String fromAddress,
-    String toAddress,
-    int amountInSun,
-  ) async {
-    final url = '$_tronRestUrl/wallet/createtransaction';
-    final body = jsonEncode({
-      'owner_address': '41' + _tronAddressToHex(fromAddress).substring(2),
-      'to_address': '41' + _tronAddressToHex(toAddress).substring(2),
-      'amount': amountInSun,
-    });
-
-    final response = await _http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
-
-    if (response.statusCode == 200) {
-      //var g = jsonDecode(response.body);
-      return response.body;
-    } else {
-      print('Failed to create transaction: ${response.body}');
-      return '';
-    }
-  }
-
 // Пример функции отправки транзакции в TRON
   Future<String> sendTronTransaction(
     Coin coin,
@@ -75,62 +47,48 @@ final class TronWallet extends BaseBlockchainWallet {
     final privateKey = _walletRepository.getKeyForCoin(TWCoinType.TWCoinTypeTron).toList();
 
     try {
-      var createdTransaction = await _createTronTransaction(fromAddress, toAddress, amountInSun.toInt());
+      var stamp = DateTime.now().millisecondsSinceEpoch;
+      final blockData = await getLatestBlock();
 
-      print(createdTransaction);
+      final blockHeader = blockData['block_header']['raw_data'];
 
-      // Создание контракта передачи средств
-      final transferContract = tron.TransferContract(
+      final transferContract = Tron.TransferContract(
         ownerAddress: fromAddress,
         toAddress: toAddress,
         amount: $fixnum.Int64(amountInSun.toInt()), // Используем Int64 для указания суммы в Sun
       );
 
-      final blockData = await getLatestBlock();
-      final rawData = blockData['block_header']['raw_data'];
-      final int blockNumber = rawData['number'];
-
-      final String txTrieRoot = rawData['txTrieRoot'];
-      final String parentHash = rawData['parentHash'];
-      final String witnessAddress = rawData['witness_address'];
-      final int version = rawData['version'];
-
-      final blockHeader = tron.BlockHeader(
-        number: $fixnum.Int64(blockNumber),
-        txTrieRoot: hexToBytes(txTrieRoot),
-        parentHash: hexToBytes(parentHash),
-        witnessAddress: hexToBytes(witnessAddress),
-        version: version,
-        timestamp: $fixnum.Int64(DateTime.now().millisecondsSinceEpoch),
+      final header = Tron.BlockHeader(
+        txTrieRoot: hexToBytes(blockHeader['txTrieRoot']),
+        parentHash: hexToBytes(blockHeader['parentHash']),
+        number: $fixnum.Int64(blockHeader['number']),
+        witnessAddress: hexToBytes(blockHeader['witness_address']),
+        version: blockHeader['version'],
+        //timestamp: $fixnum.Int64(stamp),
+        timestamp: $fixnum.Int64(blockHeader['timestamp']),
       );
 
-      print(blockHeader);
-
       // Создание транзакции
-      final transaction = tron.Transaction(
+      final transaction = Tron.Transaction(
         transfer: transferContract,
-        blockHeader: blockHeader,
-        feeLimit: $fixnum.Int64(1000000), // Установка лимита комиссии (1,000,000 Sun = 1 TRX)
-        timestamp: $fixnum.Int64(DateTime.now().millisecondsSinceEpoch),
-        expiration: $fixnum.Int64(DateTime.now().millisecondsSinceEpoch + 36000000), // Время жизни транзакции
+        blockHeader: header,
+        timestamp: $fixnum.Int64(stamp),
+        expiration: $fixnum.Int64(stamp + 10 * 60 * 60 * 1000), // Время жизни транзакции
       );
 
       // Подготовка данных для подписания транзакции
-      final signedTransaction = tron.SigningInput(
+      final input = Tron.SigningInput(
         transaction: transaction,
         privateKey: privateKey, // Преобразование приватного ключа в байты
       );
 
       TWCoinType coin = TWCoinType.TWCoinTypeTron;
-      final sign = _walletRepository.sign(signedTransaction.writeToBuffer(), coin);
-      final signingOutput = tron.SigningOutput.fromBuffer(sign);
-      var rawTx = signingOutput.json;
-      print(rawTx);
-      // var f = signingOutput.json;
-      // //final rawTx = Utils.bytesToHex(signingOutput.encoded);
+
+      final sign = _walletRepository.sign(input.writeToBuffer(), coin);
+      final output = Tron.SigningOutput.fromBuffer(sign);
 
       // Отправка подписанной транзакции
-      return await _sendRawTronTransaction(rawTx);
+      return await _sendRawTronTransaction(output.json);
     } catch (e) {
       throw Exception('Failed to send transaction: $e');
     }
@@ -284,11 +242,11 @@ final class TronWallet extends BaseBlockchainWallet {
           // Указываем chainId для Binance Smart Chain (Mainnet: 56, Testnet: 97)
           final chainId = _bigIntToUint8List(BigInt.from(97)); // TestNet BSC
 
-          final t = tron.Transaction(
-            transfer: tron.TransferContract(),
+          final t = Tron.Transaction(
+            transfer: Tron.TransferContract(),
           );
 
-          final s = tron.SigningInput();
+          final s = Tron.SigningInput();
 
           // Подписываем транзакцию
           final signedTransaction = ethereum.SigningInput(
